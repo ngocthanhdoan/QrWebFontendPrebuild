@@ -150,7 +150,7 @@ async function submitForm() {
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <label for="buyerJob">Nghề Nghiệp</label>
+                    <label for="buyerJob">Nghề Nghiệp {{ buyerJob }}</label>
                     <Select id="buyerJob" v-model="buyerJob" :options="dropdownItemsJob" optionLabel="name" placeholder="Chọn nghề nghiệp"></Select>
                 </div>
             </div>

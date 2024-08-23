@@ -1,179 +1,192 @@
-<script setup>
-import { ref } from 'vue';
-import { fetchData, postData, putData, deleteData } from '@/service/DataPayLoad';
+<script>
+import fetchOptionsMixin from '@/mixins/fetchOptionsMixin';
+import axios from 'axios';
 
-const data = ref([]);
-const selectedItems = ref([]);
-const currentItem = ref({ id: '', value: '', prefix: '', desc: '' });
-const isEditing = ref(false);
+export default {
+    mixins: [fetchOptionsMixin],
 
-async function loadData() {
-    try {
-        const response = await fetchData('DataSnapPayLoad');
-        if (response.returnCode === 0) {
-            data.value = response.returnData;
-        } else {
-            console.warn(response.msgDescs);
+    data() {
+        return {
+            selectedOptions: {}, // Object to hold selected values for each prefix
+            dynamicOptions: {} // Object to hold options for each prefix
+        };
+    },
+    methods: {
+        async fetchData() {
+            try {
+                const response = await axios.get('http://localhost:8082/v4/api/data');
+                const prefixes = this.extractPrefixes(response.data);
+                await Promise.all(prefixes.map((prefix) => this.fetchAuto(prefix)));
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        },
+        extractPrefixes(data) {
+            return [...new Set(data.map((item) => item.prefix))];
+        },
+        async fetchAuto(prefix) {
+            try {
+                const response = await axios.get(`http://localhost:8082/v4/api/data/prefix/${prefix}`);
+                this.dynamicOptions[prefix] = response.data.map((item) => ({
+                    code: item.key,
+                    name: item.value
+                }));
+                this.selectedOptions[prefix] = ''; // Initialize selected value
+            } catch (error) {
+                console.error(`Error fetching options for prefix ${prefix}:`, error);
+            }
+        },
+        clearCMI() {
+            sessionStorage.setItem('CMI_ID', '');
         }
-    } catch (error) {
-        console.error('Failed to load data:', error);
+    },
+    mounted() {
+        // Optionally load data when component is mounted
+        this.fetchData();
     }
-}
-
-function openAddForm() {
-    isEditing.value = false;
-    currentItem.value = {
-        id: Date.now().toString(), // Generate a new ID
-        value: '',
-        prefix: '',
-        desc: ''
-    };
-}
-
-function openEditForm(item) {
-    isEditing.value = true;
-    currentItem.value = { ...item };
-}
-
-function cancelEdit() {
-    currentItem.value = { id: '', value: '', prefix: '', desc: '' };
-    isEditing.value = false;
-}
-
-async function saveItem() {
-    try {
-        if (isEditing.value && currentItem.value.id) {
-            // Update existing item
-            await putData(`DataSnapPayLoad/${currentItem.value.id}`, currentItem.value);
-        } else {
-            // Add new item
-            await postData('DataSnapPayLoad', currentItem.value);
-        }
-        await loadData();
-        cancelEdit();
-    } catch (error) {
-        console.error('Failed to save data:', error);
-    }
-}
-
-async function deleteItem(item) {
-    try {
-        await deleteData(`DataSnapPayLoad/${item.id}`);
-        await loadData();
-        selectedItems.value = selectedItems.value.filter((selectedItem) => selectedItem.id !== item.id);
-    } catch (error) {
-        console.error('Failed to delete item:', error);
-    }
-}
-
-async function deleteSelectedItems() {
-    if (selectedItems.value.length > 0) {
-        try {
-            const deletePromises = selectedItems.value.map((item) => deleteData(`DataSnapPayLoad/${item.id}`));
-            await Promise.all(deletePromises);
-            await loadData();
-            selectedItems.value = [];
-        } catch (error) {
-            console.error('Failed to delete items:', error);
-        }
-    } else {
-        console.warn('No items selected for deletion.');
-    }
-}
-
-function toggleSelection(item) {
-    const index = selectedItems.value.findIndex((selectedItem) => selectedItem.id === item.id);
-    if (index > -1) {
-        selectedItems.value.splice(index, 1);
-    } else {
-        selectedItems.value.push(item);
-    }
-}
-
-function toggleAll(event) {
-    if (event.target.checked) {
-        selectedItems.value = [...data.value];
-    } else {
-        selectedItems.value = [];
-    }
-}
-
-function isSelected(item) {
-    return selectedItems.value.some((selectedItem) => selectedItem.id === item.id);
-}
-
-function getallSelected() {
-    return data.value.length > 0 && selectedItems.value.length === data.value.length;
-}
-
-loadData();
+};
 </script>
 
 <template>
-    <div>
-        <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-xl mb-4">Data Management</div>
+    <Fluid class="flex flex-col">
+        <div class="">
+            <h2>Select Examples</h2>
 
-            <!-- Data Table -->
-            <table class="p-datatable">
-                <thead>
-                    <tr>
-                        <th>
-                            <input type="checkbox" @change="toggleAll" :checked="allSelected" />
-                        </th>
-                        <th>ID</th>
-                        <th>Value</th>
-                        <th>Prefix</th>
-                        <th>Description</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="item in data" :key="item.id" @click="toggleSelection(item)" :class="{ selected: isSelected(item) }">
-                        <td>
-                            <input type="checkbox" :value="item" v-model="selectedItems" />
-                        </td>
-                        <td>{{ item.id }}</td>
-                        <td>{{ item.value }}</td>
-                        <td>{{ item.prefix }}</td>
-                        <td>{{ item.desc }}</td>
-                        <td>
-                            <button @click.stop="openEditForm(item)">Edit</button>
-                            <button @click.stop="deleteItem(item)">Delete</button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- Form for Add/Edit -->
-            <div class="form-container">
-                <div class="font-semibold text-xl mb-4">
-                    {{ isEditing ? 'Edit Item' : 'Add New Item' }}
-                </div>
-                <div class="p-fluid">
-                    <label>
-                        ID:
-                        <input type="text" v-model="currentItem.id" placeholder="ID" :readonly="isEditing" />
-                    </label>
-                    <label>
-                        Value:
-                        <input type="text" v-model="currentItem.value" placeholder="Value" />
-                    </label>
-                    <label>
-                        Prefix:
-                        <input type="text" v-model="currentItem.prefix" placeholder="Prefix" />
-                    </label>
-                    <label>
-                        Description:
-                        <input type="text" v-model="currentItem.desc" placeholder="Description" />
-                    </label>
-                    <button @click="saveItem">Save</button>
-                    <button @click="cancelEdit">Cancel</button>
+            <!-- Dynamically generated Select components -->
+            <div v-for="(options, prefix) in dynamicOptions" :key="prefix">
+                <Select v-model="selectedOptions[prefix]" :options="options" optionLabel="name" :placeholder="'MEMO :' + prefix" />
+                <div class="card flex flex-col gap-4 w-full mt-8" v-if="selectedOptions[prefix]">
+                    <pre><code>{{ selectedOptions[prefix] }}</code></pre>
                 </div>
             </div>
 
-            <!-- Delete Selected Items Button -->
-            <button v-if="selectedItems.length > 0" @click="deleteSelectedItems">Delete Selected</button>
+            <Button label="Clear Cache CMI" @click="clearCMI" />
+
+            <h2>DATA TESTING---</h2>
+            <div class="card flex flex-col gap-4 w-full mt-8">
+                <pre><code>
+[
+  {
+    "id": "1234567890",
+    "insured": {
+      "id": "2453494545",
+      "type_id": {
+        "code": "ID_CARD",
+        "name": "Chứng minh nhân dân"
+      },
+      "nationalID": "123456789",
+      "citizenID": "987654321",
+      "fullName": "Nguyễn Văn A",
+      "dateOfBirth": "01/01/1990",
+      "gender": {
+        "code": "MALE",
+        "name": "Nam"
+      },
+      "address": "123 Đường ABC, Quận 1, TP.HCM",
+      "issuingPlace": "Công an TP.HCM",
+      "nationality": {
+        "code": "VN",
+        "name": "Việt Nam"
+      },
+      "visaNumber": "VN123456",
+      "insuranceRelationship": "Bảo hiểm sức khỏe",
+      "mobilePhone": "0901234567",
+      "email": "nguyen@example.com",
+      "age": "34",
+      "education": {
+        "code": "BACHELOR",
+        "name": "Cử nhân"
+      },
+      "maritalStatus": {
+        "code": "SINGLE",
+        "name": "Độc thân"
+      },
+      "profession": {
+        "code": "ENGINEER",
+        "name": "Kỹ sư"
+      },
+      "majorCategory": {
+        "code": "IT",
+        "name": "Công nghệ thông tin"
+      },
+      "mediumCategory": {
+        "code": "SOFTWARE",
+        "name": "Phần mềm"
+      },
+      "minorCategory": {
+        "code": "DEVELOPER",
+        "name": "Lập trình viên"
+      },
+      "companyName": "Công ty ABC",
+      "position": "Giám đốc",
+      "jobDescription": "Quản lý dự án",
+      "monthlyIncome": "10000000",
+      "postalCode": "700000",
+      "companyPhone": "02812345678",
+      "branchNumber": "123"
+    },
+    "buyer": {
+      "id": "2453494545",
+      "type_id": {
+        "code": "ID_CARD",
+        "name": "Chứng minh nhân dân"
+      },
+      "nationalID": "123456789",
+      "citizenID": "987654321",
+      "fullName": "Nguyễn Văn A",
+      "dateOfBirth": "01/01/1990",
+      "gender": {
+        "code": "MALE",
+        "name": "Nam"
+      },
+      "address": "123 Đường ABC, Quận 1, TP.HCM",
+      "issuingPlace": "Công an TP.HCM",
+      "nationality": {
+        "code": "VN",
+        "name": "Việt Nam"
+      },
+      "visaNumber": "VN123456",
+      "insuranceRelationship": "Bảo hiểm sức khỏe",
+      "mobilePhone": "0901234567",
+      "email": "nguyen@example.com",
+      "age": "34",
+      "education": {
+        "code": "BACHELOR",
+        "name": "Cử nhân"
+      },
+      "maritalStatus": {
+        "code": "SINGLE",
+        "name": "Độc thân"
+      },
+      "profession": {
+        "code": "ENGINEER",
+        "name": "Kỹ sư"
+      },
+      "majorCategory": {
+        "code": "IT",
+        "name": "Công nghệ thông tin"
+      },
+      "mediumCategory": {
+        "code": "SOFTWARE",
+        "name": "Phần mềm"
+      },
+      "minorCategory": {
+        "code": "DEVELOPER",
+        "name": "Lập trình viên"
+      },
+      "companyName": "Công ty ABC",
+      "position": "Giám đốc",
+      "jobDescription": "Quản lý dự án",
+      "monthlyIncome": "10000000",
+      "postalCode": "700000",
+      "companyPhone": "02812345678",
+      "branchNumber": "123"
+    },
+    "dependents": null
+  }
+]
+                </code></pre>
+            </div>
         </div>
-    </div>
+    </Fluid>
 </template>

@@ -5,7 +5,6 @@ import { apiService } from '@/service/ApiService';
 import { useToast } from 'primevue/usetoast';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import DatePicker from 'primevue/datepicker';
 
@@ -52,13 +51,14 @@ function formatDate(value) {
 }
 
 function formatGender(value) {
-    return value === 'Nam' ? 'Male' : 'Female';
+    return value === 'Nam' ? 'Nam' : 'Nữ';
 }
 
 function onRowClick(row) {
     selectedRowId.value = row; // Assuming 'id' is the identifier in your data
     console.log('Selected row ID:', JSON.stringify(selectedRowId.value.data.id));
-    toast.add({ severity: 'success', summary: 'Row Selected', detail: `Now Processing: ${selectedRowId.value.data.id}`, life: 3000 });
+    toast.add({ severity: 'success', summary: `Mã thụ lý: ${selectedRowId.value.data.id}`, detail: `Đã được nạp dữ liệu để thực hiện nhập CMI`, life: 6000 });
+    sessionStorage.setItem('CMI_ID', selectedRowId.value.data.id);
 }
 </script>
 
@@ -83,31 +83,31 @@ function onRowClick(row) {
             <template #empty> No data found. </template>
             <template #loading> Loading data. Please wait. </template>
 
-            <Column field="insured.FullName" header="Insured Full Name" style="min-width: 12rem">
+            <Column field="insured.FullName" header="Tên Người Được Bảo Hiểm" style="min-width: 12rem">
                 <template #body="{ data }">
                     {{ data.insured.FullName }}
                 </template>
                 <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Insured Full Name" />
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Người Được Bảo Hiểm" />
                 </template>
             </Column>
-            <Column field="buyer.FullName" header="Buyer Full Name" style="min-width: 12rem">
+            <Column field="buyer.FullName" header="Tên Bên Mua Bảo Hiểm" style="min-width: 12rem">
                 <template #body="{ data }">
                     {{ data.buyer.FullName }}
                 </template>
                 <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Buyer Full Name" />
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Bên Mua Bảo Hiểm" />
                 </template>
             </Column>
-            <Column field="dependents.FullName" header="Dependents Full Name" style="min-width: 12rem">
+            <Column field="dependents.FullName" header="Tên Người Phụ Thuộc" style="min-width: 12rem">
                 <template #body="{ data }">
                     <div v-for="dep in data.dependents" :key="dep.id">{{ dep.FullName }}</div>
                 </template>
                 <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Dependents Full Name" />
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Người Phụ Thuộc" />
                 </template>
             </Column>
-            <Column field="insured.DateOfBirth" header="Insured Date of Birth" style="min-width: 12rem">
+            <Column field="insured.DateOfBirth" header="Năm Sinh" style="min-width: 12rem">
                 <template #body="{ data }">
                     {{ formatDate(data.insured.DateOfBirth) }}
                 </template>
@@ -115,7 +115,7 @@ function onRowClick(row) {
                     <DatePicker v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
                 </template>
             </Column>
-            <Column field="insured.Gender" header="Insured Gender" style="min-width: 12rem">
+            <Column field="insured.Gender" header="Giới Tính" style="min-width: 12rem">
                 <template #body="{ data }">
                     {{ formatGender(data.insured.Gender) }}
                 </template>
