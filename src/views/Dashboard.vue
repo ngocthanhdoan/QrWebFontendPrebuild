@@ -1,246 +1,532 @@
-<script setup>
-import { ref } from 'vue';
-import InputText from 'primevue/inputtext';
-import Button from 'primevue/button';
-import DatePicker from 'primevue/datepicker';
-import { apiService } from '@/service/ApiService';
-import { useToast } from 'primevue/usetoast';
+<script>
+import fetchOptionsMixin from '@/mixins/fetchOptionsMixin';
 import axios from 'axios';
-// State for buyer
-const buyerIdNumber = ref('');
-const buyerCalendarValue = ref(null);
-const buyerAge = ref('');
-const buyerGender = ref(null);
-const buyerJob = ref(null);
-const buyerFullName = ref('');
-const buyerAddress = ref('');
+import { useToast } from 'primevue/usetoast';
+import { ref } from 'vue';
 
-// State for insured
-const insuredIdNumber = ref('');
-const insuredCalendarValue = ref(null);
-const insuredAge = ref('');
-const insuredGender = ref(null);
-const insuredJob = ref(null);
-const insuredFullName = ref('');
-const insuredAddress = ref('');
-const dropdownItemsGender = [
-    { name: 'Nam', code: '1' },
-    { name: 'Nữ', code: '2' }
-];
+export default {
+    mixins: [fetchOptionsMixin],
 
-const dropdownItemsJob = ref([]);
-
-// List to store dependents
-const dependents = ref([]);
-
-// Method to add a new dependent
-function addDependent() {
-    dependents.value.push({
-        idNumber: '',
-        calendarValue: null,
-        age: '',
-        gender: null,
-        job: null
-    });
-}
-
-// Method to remove a dependent
-function removeDependent(index) {
-    dependents.value.splice(index, 1);
-}
-
-// Copy information from buyer to insured
-function copyInsuranceDetails() {
-    insuredIdNumber.value = buyerIdNumber.value;
-    insuredCalendarValue.value = buyerCalendarValue.value;
-    insuredAge.value = buyerAge.value;
-    insuredGender.value = buyerGender.value;
-    insuredJob.value = buyerJob.value;
-}
-const toast = useToast();
-
-async function loadJobs() {
-    try {
-        const data = await apiService.fetchData('/Jobs', toast);
-        if (data.returnCode === 0) {
-            dropdownItemsJob.value = data.returnData.map((job) => ({
-                name: job.jobName,
-                code: job.id
-            }));
-        } else {
-            toast.add({ severity: 'warn', summary: 'Warning', detail: data.msgDescs, life: 3000 });
+    data() {
+        return {
+            insured: {
+                id: '',
+                type_id: {},
+                nationalID: '',
+                citizenID: '',
+                fullName: '',
+                dateOfBirth: '',
+                gender: {},
+                address: '',
+                issuingPlace: '',
+                nationality: {},
+                visaNumber: '',
+                insuranceRelationship: '',
+                mobilePhone: '',
+                email: '',
+                age: '',
+                education: {},
+                maritalStatus: {},
+                profession: {},
+                majorCategory: {},
+                mediumCategory: {},
+                minorCategory: {},
+                companyName: '',
+                position: '',
+                jobDescription: '',
+                monthlyIncome: '',
+                postalCode: '',
+                companyPhone: '',
+                branchNumber: ''
+            },
+            buyer: {
+                id: '',
+                type_id: {},
+                nationalID: '',
+                citizenID: '',
+                fullName: '',
+                dateOfBirth: '',
+                gender: {},
+                address: '',
+                issuingPlace: '',
+                nationality: {},
+                visaNumber: '',
+                insuranceRelationship: '',
+                mobilePhone: '',
+                email: '',
+                age: '',
+                education: {},
+                maritalStatus: {},
+                profession: {},
+                majorCategory: {},
+                mediumCategory: {},
+                minorCategory: {},
+                companyName: '',
+                position: '',
+                jobDescription: '',
+                monthlyIncome: '',
+                postalCode: '',
+                companyPhone: '',
+                branchNumber: ''
+            },
+            dependents: [],
+            toast: null,
+            CMI_ID: null,
+            selectedOptions: {},
+            dynamicOptions: {},
+            showQRBuyer: false,
+            showQRInsured: false,
+            fileInputRefBuyer: ref(null), // Reference to file input element for Buyer
+            fileInputRefInsured: ref(null),
+            loading: false
+        };
+    },
+    computed: {
+        isCitizenIDBuyer() {
+            return this.buyer.type_id.code === 'ID_CARD_1';
+        },
+        isCitizenIDInsured() {
+            return this.insured.type_id.code === 'ID_CARD_1';
         }
-    } catch (error) {
-        console.error('Failed to load jobs:', error);
-        toast.add({ severity: 'error', summary: 'Error', detail: 'An error occurred while fetching jobs.', life: 3000 });
-    }
-}
-
-// Load jobs on component setup
-loadJobs();
-// Method to gather and send data
-async function submitForm() {
-    const data = {
-        id: '1234567890', // Or generate a unique ID if needed
-        insured: {
-            id: 'insured1',
-            NationalID: insuredIdNumber.value,
-            CitizenID: 'CIT123456',
-            FullName: insuredFullName.value,
-            DateOfBirth: insuredCalendarValue.value,
-            Gender: insuredGender.value,
-            Address: insuredAddress.value
+    },
+    methods: {
+        async fetchData() {
+            this.loading = true; // Set loading to true before starting API call
+            try {
+                const response = await axios.get('http://localhost:8082/v4/api/data');
+                const prefixes = this.extractPrefixes(response.data);
+                await Promise.all(prefixes.map((prefix) => this.fetchAuto(prefix)));
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                this.loading = false; // Set loading to false when API call is complete
+            }
         },
-        buyer: {
-            id: 'buyer1',
-            NationalID: buyerIdNumber.value,
-            CitizenID: 'CIT987654',
-            FullName: buyerFullName.value,
-            DateOfBirth: buyerCalendarValue.value,
-            Gender: buyerGender.value,
-            Address: buyerAddress.value
+        extractPrefixes(data) {
+            return [...new Set(data.map((item) => item.prefix))];
         },
-        dependents: dependents.value.map((dependent) => ({
-            id: dependent.id,
-            NationalID: dependent.NationalID,
-            CitizenID: dependent.CitizenID,
-            FullName: dependent.FullName,
-            DateOfBirth: dependent.DateOfBirth,
-            Gender: dependent.Gender,
-            Address: dependent.Address
-        }))
-    };
+        async fetchAuto(prefix) {
+            this.loading = true; // Set loading to true before starting API call
+            try {
+                const response = await axios.get(`http://localhost:8082/v4/api/data/prefix/${prefix}`);
+                this.dynamicOptions[prefix] = response.data.map((item) => ({
+                    code: item.key,
+                    name: item.value
+                }));
+                this.selectedOptions[prefix] = '';
+            } catch (error) {
+                console.error(`Error fetching options for prefix ${prefix}:`, error);
+            } finally {
+                this.loading = false; // Set loading to false when API call is complete
+            }
+        },
+        calculateAge(dateOfBirth) {
+            if (!dateOfBirth) return '';
+            const birthDate = new Date(dateOfBirth);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDifference = today.getMonth() - birthDate.getMonth();
+            if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        },
+        updateAge() {
+            this.insured.age = this.calculateAge(this.insured.dateOfBirth);
+            this.buyer.age = this.calculateAge(this.buyer.dateOfBirth);
+            this.dependents.forEach((dependent) => {
+                dependent.age = this.calculateAge(dependent.dateOfBirth);
+            });
+        },
+        validateForm() {
+            const errors = [];
+            if (!this.buyer.nationalID) errors.push('Số chứng minh nhân dân của bên mua bảo hiểm là bắt buộc.');
+            if (!this.buyer.fullName) errors.push('Họ tên của bên mua bảo hiểm là bắt buộc.');
+            if (!this.insured.nationalID) errors.push('Số chứng minh nhân dân của người được bảo hiểm là bắt buộc.');
+            if (!this.insured.fullName) errors.push('Họ tên của người được bảo hiểm là bắt buộc.');
 
-    try {
-        const response = await axios.post('/api/submit', data);
-        console.log('Data submitted successfully:', response.data);
-        // Handle success (e.g., show a success message)
-    } catch (error) {
-        console.error('Error submitting data:', error);
-        // Handle error (e.g., show an error message)
+            // Validate email
+            // const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            // if (this.buyer.email && !emailPattern.test(this.buyer.email)) {
+            //     errors.push('Email của bên mua bảo hiểm không hợp lệ.');
+            // }
+
+            // Validate phone number (example pattern, you may need to adjust)
+            // const phonePattern = /^[0-9]{10,15}$/;
+            // if (this.buyer.mobilePhone && !phonePattern.test(this.buyer.mobilePhone)) {
+            //     errors.push('Số điện thoại của bên mua bảo hiểm không hợp lệ.');
+            // }
+
+            // Validate date format (example pattern for dd/mm/yyyy)
+            // const datePattern = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            // if (this.buyer.dateOfBirth && !datePattern.test(this.buyer.dateOfBirth)) {
+            //     errors.push('Ngày sinh của bên mua bảo hiểm không hợp lệ.');
+            // }
+
+            // Validate dependents' data
+            this.dependents.forEach((dependent, index) => {
+                // if (!dependent.idNumber) errors.push(`Số chứng minh nhân dân của người phụ thuộc ${index + 1} là bắt buộc.`);
+                if (!dependent.fullName) errors.push(`Họ tên của người phụ thuộc ${index + 1} là bắt buộc.`);
+            });
+
+            return errors;
+        },
+        async submitForm() {
+            const errors = this.validateForm();
+            if (errors.length > 0) {
+                errors.forEach((error) => this.toast.add({ severity: 'error', summary: 'Lỗi', detail: error, life: 3000 }));
+                return;
+            }
+
+            console.log('Submitting form with data:', this.insured, this.dependents);
+            this.insured.id = this.insured.nationalID;
+            this.buyer.id = this.buyer.nationalID;
+            var data = {
+                id: this.uuidv4(),
+                insured: this.insured,
+                buyer: this.buyer,
+                dependents: this.dependents
+            };
+            console.log(JSON.stringify(data));
+
+            // Perform the API call to submit the form
+            this.loading = true;
+            try {
+                const response = await axios.post('http://localhost:8082/v1/api/DataForTesting', data);
+                if (response.data.status === 'success') {
+                    this.toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 });
+                } else {
+                    this.toast.add({ severity: 'error', summary: 'Lỗi', detail: response.data.message, life: 3000 });
+                }
+                console.log(response);
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                this.toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể gửi dữ liệu.', life: 3000 });
+            } finally {
+                this.loading = false;
+            }
+        },
+        uuidv4() {
+            return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) => (+c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (+c / 4)))).toString(16));
+        },
+        addDependent() {
+            this.dependents.push({
+                id: '',
+                type_id: {},
+                nationalID: '',
+                citizenID: '',
+                fullName: '',
+                dateOfBirth: '',
+                gender: {},
+                address: '',
+                issuingPlace: '',
+                nationality: {},
+                visaNumber: '',
+                insuranceRelationship: '',
+                mobilePhone: '',
+                email: '',
+                age: '',
+                education: {},
+                maritalStatus: {},
+                profession: {},
+                majorCategory: {},
+                mediumCategory: {},
+                minorCategory: {},
+                companyName: '',
+                position: '',
+                jobDescription: '',
+                monthlyIncome: '',
+                postalCode: '',
+                companyPhone: '',
+                branchNumber: ''
+            });
+        },
+        removeDependent(index) {
+            this.dependents.splice(index, 1);
+        },
+        onBuyerTypeChange() {
+            this.showQRBuyer = this.isCitizenIDBuyer;
+        },
+        onInsuredTypeChange() {
+            this.showQRInsured = this.isCitizenIDInsured;
+        },
+        formatDate(dateStr) {
+            if (!dateStr || dateStr.length !== 8) return '';
+            const day = dateStr.substring(0, 2);
+            const month = dateStr.substring(2, 4);
+            const year = dateStr.substring(4, 8);
+            return `${day}/${month}/${year}`;
+        },
+
+        async handleFileUploadBuyer() {
+            const fileInput = this.$refs.fileInputRefBuyer;
+
+            if (!fileInput || fileInput.files.length === 0) {
+                this.toast.add({ severity: 'warn', summary: 'Warning', detail: 'Please select a file to upload.', life: 3000 });
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            this.loading = true; // Set loading to true before starting API call
+
+            try {
+                const response = await axios.post('http://localhost:8082/api/process-upload', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                if (response.data.status === 'success') {
+                    this.updateFormWithResponse(response.data.detections[0].message, 'buyer');
+                    this.toast.add({ severity: 'success', summary: 'Success', detail: response.data.message, life: 3000 });
+                } else if (response.data.status === 'warning') {
+                    this.updateFormWithResponse(response.data.new_data, 'buyer');
+                    this.toast.add({ severity: 'warn', summary: 'Warning', detail: response.data.message, life: 3000 });
+                } else {
+                    this.toast.add({ severity: 'error', summary: 'Error', detail: response.data.message, life: 3000 });
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to upload file.', life: 3000 });
+            } finally {
+                this.loading = false; // Set loading to false when API call is complete
+            }
+        },
+
+        // Xử lý quét mã QR của người được bảo hiểm
+        async handleFileUploadInsured() {
+            const fileInput = this.$refs.fileInputRefInsured;
+
+            if (!fileInput || fileInput.files.length === 0) {
+                this.toast.add({ severity: 'warn', summary: 'Warning', detail: 'Please select a file to upload.', life: 3000 });
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            this.loading = true; // Set loading to true before starting API call
+
+            try {
+                const response = await axios.post('http://localhost:8082/api/process-upload', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                if (response.data.status === 'success') {
+                    this.updateFormWithResponse(response.data.detections[0].message, 'insured');
+                    this.toast.add({ severity: 'success', summary: 'Success', detail: response.data.message, life: 3000 });
+                } else if (response.data.status === 'warning') {
+                    this.updateFormWithResponse(response.data.new_data, 'insured');
+                    this.toast.add({ severity: 'warn', summary: 'Warning', detail: response.data.message, life: 3000 });
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to upload file.', life: 3000 });
+            } finally {
+                this.loading = false; // Set loading to false when API call is complete
+            }
+        },
+
+        // Cập nhật form với dữ liệu từ phản hồi
+        updateFormWithResponse(data, type) {
+            console.log(data);
+            const formattedDateOfBirth = this.formatDate(data.birth_date);
+            var gender;
+            if (data.gender == 'Nam') {
+                gender = { code: 'MALE', name: 'Nam' };
+            } else {
+                gender = { code: 'FEMALE', name: 'Nữ' };
+            }
+            if (type === 'buyer') {
+                this.buyer.nationalID = data.id_identity_card || '';
+                this.buyer.citizenID = data.id_passport || '';
+                this.buyer.fullName = data.fullname || '';
+                this.buyer.dateOfBirth = formattedDateOfBirth || '';
+                this.buyer.gender = gender || '';
+                this.buyer.address = data.address || '';
+            } else if (type === 'insured') {
+                this.insured.nationalID = data.id_identity_card || '';
+                this.insured.citizenID = data.id_passport || '';
+                this.insured.fullName = data.fullname || '';
+                this.insured.dateOfBirth = formattedDateOfBirth || '';
+                this.insured.gender = gender || '';
+                this.insured.address = data.address || '';
+            }
+        }
+    },
+    watch: {
+        'insured.dateOfBirth': 'updateAge',
+        'buyer.dateOfBirth': 'updateAge',
+        dependents: {
+            handler() {
+                this.updateAge();
+            },
+            deep: true
+        },
+        'buyer.type_id': 'onBuyerTypeChange',
+        'insured.type_id': 'onInsuredTypeChange'
+    },
+    mounted() {
+        this.toast = useToast();
+        this.fetchData();
     }
-}
+};
 </script>
 
 <template>
-    <div>
+    <div class="p-6">
         <!-- Form Bên Mua Bảo Hiểm -->
-        <div class="card flex flex-col gap-4 w-full">
-            <div class="font-semibold text-xl">Bên Mua Bảo Hiểm</div>
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerIdNumber">Số chứng minh nhân dân</label>
-                    <InputText id="buyerIdNumber" v-model="buyerIdNumber" type="text" />
+        <div class="card p-6 mb-6 w-full">
+            <h2 class="text-xl font-semibold mb-4">Bên Mua Bảo Hiểm</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-if="dynamicOptions['DOCUMENT_TYPE'] && dynamicOptions['DOCUMENT_TYPE'].length" class="flex flex-col">
+                    <label for="buyerDocumentType" class="mb-2">Loại giấy tờ</label>
+                    <Select id="buyerDocumentType" v-model="buyer.type_id" :options="dynamicOptions['DOCUMENT_TYPE']" optionLabel="name" />
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerFullName">Họ tên</label>
-                    <InputText id="buyerFullName" v-model="buyerFullName" type="text" />
+                <div class="flex flex-col">
+                    <label for="buyerIdNumber" class="mb-2">Số chứng minh nhân dân</label>
+                    <InputText id="buyerIdNumber" v-model="buyer.nationalID" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerAddress">Địa chỉ</label>
-                    <InputText id="buyerAddress" v-model="buyerAddress" type="text" />
+                <div class="flex flex-col">
+                    <label for="buyerCitizenID" class="mb-2">Số căn cước công dân</label>
+                    <InputText id="buyerCitizenID" v-model="buyer.citizenID" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerBirthdate">Ngày sinh</label>
-                    <DatePicker id="buyerBirthdate" v-model="buyerCalendarValue" />
+                <div class="flex flex-col">
+                    <label for="buyerFullName" class="mb-2">Họ tên</label>
+                    <InputText id="buyerFullName" v-model="buyer.fullName" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerAge">Tuổi</label>
-                    <InputText id="buyerAge" v-model="buyerAge" type="text" />
+                <div class="flex flex-col">
+                    <label for="buyerAddress" class="mb-2">Địa chỉ</label>
+                    <InputText id="buyerAddress" v-model="buyer.address" type="text" />
                 </div>
-
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerJob">Nghề Nghiệp {{ buyerJob }}</label>
-                    <Select id="buyerJob" v-model="buyerJob" :options="dropdownItemsJob" optionLabel="name" placeholder="Chọn nghề nghiệp"></Select>
+                <div class="flex flex-col">
+                    <label for="buyerBirthdate" class="mb-2">Ngày sinh</label>
+                    <DatePicker id="buyerBirthdate" v-model="buyer.dateOfBirth" />
                 </div>
-            </div>
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex flex-wrap gap-2">
-                    <label for="buyerGender">Giới Tính</label>
-                    <Select id="buyerGender" v-model="buyerGender" :options="dropdownItemsGender" optionLabel="name" placeholder="Chọn giới tính"></Select>
+                <div class="flex flex-col">
+                    <label for="buyerAge" class="mb-2">Tuổi</label>
+                    <InputText id="buyerAge" v-model="buyer.age" readonly="true" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <Button id="btn1" label="Nhập thông tin từ mã QR căn cước" @click="submitForm" />
+                <div v-if="dynamicOptions['MAJOR_CATEGORY'] && dynamicOptions['MAJOR_CATEGORY'].length" class="flex flex-col">
+                    <label for="buyerJob" class="mb-2">Nghề Nghiệp</label>
+                    <Select id="buyerJob" v-model="buyer.majorCategory" :options="dynamicOptions['MAJOR_CATEGORY']" optionLabel="name" />
+                </div>
+                <div v-if="dynamicOptions['GENDER'] && dynamicOptions['GENDER'].length" class="flex flex-col">
+                    <label for="buyerGender" class="mb-2">Giới Tính</label>
+                    <Select id="buyerGender" v-model="buyer.gender" :options="dynamicOptions['GENDER']" optionLabel="name" placeholder="Chọn giới tính" />
+                </div>
+                <div v-if="showQRBuyer" class="flex items-center mt-6">
+                    <input type="file" ref="fileInputRefBuyer" @change="handleFileUploadBuyer" style="display: none" />
+                    <Button id="btn1" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefBuyer.click()" />
                 </div>
             </div>
         </div>
 
         <!-- Form Người Được Bảo Hiểm -->
-        <div class="card flex flex-col gap-4 w-full mt-8">
-            <div class="font-semibold text-xl">Người được bảo hiểm</div>
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredIdNumber">Số chứng minh nhân dân</label>
-                    <InputText id="insuredIdNumber" v-model="insuredIdNumber" type="text" />
+        <div class="card p-6 mt-8 w-full">
+            <h2 class="text-xl font-semibold mb-4">Người Được Bảo Hiểm</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div v-if="dynamicOptions['DOCUMENT_TYPE'] && dynamicOptions['DOCUMENT_TYPE'].length" class="flex flex-col">
+                    <label for="insuredDocumentType" class="mb-2">Loại giấy tờ</label>
+                    <Select id="insuredDocumentType" v-model="insured.type_id" :options="dynamicOptions['DOCUMENT_TYPE']" optionLabel="name" />
                 </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredBirthdate">Ngày sinh</label>
-                    <DatePicker id="insuredBirthdate" v-model="insuredCalendarValue" />
+                <div class="flex flex-col">
+                    <label for="insuredIdNumber" class="mb-2">Số chứng minh nhân dân</label>
+                    <InputText id="insuredIdNumber" v-model="insured.nationalID" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredAge">Tuổi</label>
-                    <InputText id="insuredAge" v-model="insuredAge" type="text" />
+                <div class="flex flex-col">
+                    <label for="insuredCitizenID" class="mb-2">Số căn cước công dân</label>
+                    <InputText id="insuredCitizenID" v-model="insured.citizenID" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredGender">Giới Tính</label>
-                    <Select id="insuredGender" v-model="insuredGender" :options="dropdownItemsGender" optionLabel="name" placeholder="Chọn giới tính" />
+                <div class="flex flex-col">
+                    <label for="insuredFullName" class="mb-2">Họ tên</label>
+                    <InputText id="insuredFullName" v-model="insured.fullName" type="text" />
                 </div>
-
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredJob">Nghề Nghiệp</label>
-                    <!-- <Select id="insuredJob" v-model="insuredJob" :options="dropdownItemsJob" optionLabel="name" placeholder="Chọn nghề nghiệp" /> -->
-                    <Select id="insuredJob" v-model="insuredJob" :options="dropdownItemsJob" optionLabel="name" placeholder="Chọn nghề nghiệp"></Select>
+                <div class="flex flex-col">
+                    <label for="insuredAddress" class="mb-2">Địa chỉ</label>
+                    <InputText id="insuredAddress" v-model="insured.address" type="text" />
                 </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredFullName">Họ tên</label>
-                    <InputText id="insuredFullName" v-model="insuredFullName" type="text" />
+                <div class="flex flex-col">
+                    <label for="insuredBirthdate" class="mb-2">Ngày sinh</label>
+                    <DatePicker id="insuredBirthdate" v-model="insured.dateOfBirth" />
                 </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label for="insuredAddress">Địa chỉ</label>
-                    <InputText id="insuredAddress" v-model="insuredAddress" type="text" />
+                <div class="flex flex-col">
+                    <label for="insuredAge" class="mb-2">Tuổi</label>
+                    <InputText id="insuredAge" v-model="insured.age" readonly="true" type="text" />
                 </div>
-            </div>
-            <div class="flex items-center mt-4">
-                <Button label="Sao chép thông tin từ bên mua bảo hiểm" @click="copyInsuranceDetails" />
+                <div v-if="dynamicOptions['MAJOR_CATEGORY'] && dynamicOptions['MAJOR_CATEGORY'].length" class="flex flex-col">
+                    <label for="insuredJob" class="mb-2">Nghề Nghiệp</label>
+                    <Select id="insuredJob" v-model="insured.majorCategory" :options="dynamicOptions['MAJOR_CATEGORY']" optionLabel="name" />
+                </div>
+                <div class="flex flex-col md:flex-row gap-4 mt-6">
+                    <div class="flex flex-col w-full md:w-1/2">
+                        <label for="insuredGender" class="mb-2">Giới Tính</label>
+                        <Select id="insuredGender" v-model="insured.gender" :options="dynamicOptions['GENDER']" optionLabel="name" placeholder="Chọn giới tính" />
+                    </div>
+                    <div v-if="showQRInsured" class="flex items-center mt-6 md:mt-0">
+                        <input type="file" ref="fileInputRefInsured" @change="handleFileUploadInsured" style="display: none" />
+                        <Button id="btn2" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefInsured.click()" />
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Form Người Phụ Thuộc -->
-        <div class="card flex flex-col gap-4 w-full mt-8">
-            <div class="font-semibold text-xl">Người phụ thuộc</div>
-            <div v-for="(dependent, index) in dependents" :key="index" class="flex flex-col md:flex-row gap-4 mb-4">
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label :for="'dependentIdNumber_' + index">Số chứng minh nhân dân</label>
-                    <InputText :id="'dependentIdNumber_' + index" v-model="dependent.idNumber" type="text" />
-                </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label :for="'dependentBirthdate_' + index">Ngày sinh</label>
-                    <DatePicker :id="'dependentBirthdate_' + index" v-model="dependent.calendarValue" />
-                </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label :for="'dependentAge_' + index">Tuổi</label>
-                    <InputText :id="'dependentAge_' + index" v-model="dependent.age" type="text" />
-                </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label :for="'dependentGender_' + index">Giới Tính</label>
-                    <Select :id="'dependentGender_' + index" v-model="dependent.gender" :options="dropdownItemsGender" optionLabel="name" placeholder="Chọn giới tính" />
-                </div>
-                <div class="flex flex-wrap gap-2 w-full">
-                    <label :for="'dependentJob_' + index">Nghề Nghiệp</label>
-                    <Select :id="'dependentJob_' + index" v-model="dependent.job" :options="dropdownItemsJob" optionLabel="name" placeholder="Chọn nghề nghiệp" />
-                </div>
-                <div class="flex items-center">
-                    <Button label="Xóa" class="p-button-danger" @click="removeDependent(index)" />
+        <div class="card p-6 mt-8 w-full">
+            <h2 class="text-xl font-semibold mb-4">Người Phụ Thuộc</h2>
+            <div v-for="(dependent, index) in dependents" :key="index" class="bg-gray-100 p-4 rounded-lg mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex flex-col">
+                        <label :for="'dependentIdNumber_' + index" class="mb-2">Số chứng minh nhân dân</label>
+                        <InputText :id="'dependentIdNumber_' + index" v-model="dependent.nationalID" type="text" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentFullName_' + index" class="mb-2">Họ tên</label>
+                        <InputText :id="'dependentFullName_' + index" v-model="dependent.fullName" type="text" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentAddress_' + index" class="mb-2">Địa chỉ</label>
+                        <InputText :id="'dependentAddress_' + index" v-model="dependent.address" type="text" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentBirthdate_' + index" class="mb-2">Ngày sinh</label>
+                        <DatePicker :id="'dependentBirthdate_' + index" v-model="dependent.dateOfBirth" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentAge_' + index" class="mb-2">Tuổi</label>
+                        <InputText :id="'dependentAge_' + index" readonly="true" v-model="dependent.age" type="text" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentGender_' + index" class="mb-2">Giới Tính</label>
+                        <Select :id="'dependentGender_' + index" v-model="dependent.gender" :options="dynamicOptions['GENDER']" optionLabel="name" placeholder="Chọn giới tính" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentJob_' + index" class="mb-2">Nghề Nghiệp</label>
+                        <Select :id="'dependentJob_' + index" v-model="dependent.majorCategory" :options="dynamicOptions['MAJOR_CATEGORY']" optionLabel="name" placeholder="Chọn nghề nghiệp" />
+                    </div>
+                    <div class="flex items-center justify-end mt-4">
+                        <Button label="Xóa" class="p-button-danger" @click="removeDependent(index)" />
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center">
+            <div class="flex justify-start mt-4">
                 <Button label="Thêm Người Phụ Thuộc" @click="addDependent" />
             </div>
         </div>
-
-        <!-- Submit Button -->
-        <div class="flex justify-end mt-8">
-            <Button label="Gửi đi" @click="submitForm" />
+        <div class="card p-6 mt-8 w-full">
+            <h2 class="text-xl font-semibold mb-4">Hoàn thành thư giới thiệu</h2>
+            <!-- Submit Button -->
+            <div class="flex justify-start mt-4">
+                <Button label="Xác nhận thông tin và gửi đi" @click="submitForm" />
+            </div>
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Add styles here if needed */
+</style>

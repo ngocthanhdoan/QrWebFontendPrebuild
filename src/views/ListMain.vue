@@ -1,12 +1,11 @@
 <script setup>
-import { ref } from 'vue';
-import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 import { apiService } from '@/service/ApiService';
-import { useToast } from 'primevue/usetoast';
-import DataTable from 'primevue/datatable';
+import { FilterMatchMode, FilterOperator } from '@primevue/core/api';
 import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
-import DatePicker from 'primevue/datepicker';
+import { useToast } from 'primevue/usetoast';
+import { ref } from 'vue';
 
 const toast = useToast();
 const data = ref([]);
@@ -42,17 +41,6 @@ function initFilters() {
     };
 }
 initFilters();
-function formatDate(value) {
-    return new Date(value).toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-}
-
-function formatGender(value) {
-    return value === 'Nam' ? 'Nam' : 'Nữ';
-}
 
 function onRowClick(row) {
     selectedRowId.value = row; // Assuming 'id' is the identifier in your data
@@ -82,45 +70,37 @@ function onRowClick(row) {
         >
             <template #empty> No data found. </template>
             <template #loading> Loading data. Please wait. </template>
-
-            <Column field="insured.FullName" header="Tên Người Được Bảo Hiểm" style="min-width: 12rem">
+            <Column field="buyer.fullName" header="Mã Thụ Lý" style="min-width: 12rem">
                 <template #body="{ data }">
-                    {{ data.insured.FullName }}
-                </template>
-                <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Người Được Bảo Hiểm" />
-                </template>
-            </Column>
-            <Column field="buyer.FullName" header="Tên Bên Mua Bảo Hiểm" style="min-width: 12rem">
-                <template #body="{ data }">
-                    {{ data.buyer.FullName }}
+                    {{ data.id }}
                 </template>
                 <template #filter="{ filterModel }">
                     <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Bên Mua Bảo Hiểm" />
                 </template>
             </Column>
-            <Column field="dependents.FullName" header="Tên Người Phụ Thuộc" style="min-width: 12rem">
+            <Column field="buyer.fullName" header="Tên Bên Mua Bảo Hiểm" style="min-width: 12rem">
                 <template #body="{ data }">
-                    <div v-for="dep in data.dependents" :key="dep.id">{{ dep.FullName }}</div>
+                    {{ data.buyer.fullName }}
+                </template>
+                <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Bên Mua Bảo Hiểm" />
+                </template>
+            </Column>
+            <Column field="insured.fullName" header="Tên Người Được Bảo Hiểm" style="min-width: 12rem">
+                <template #body="{ data }">
+                    {{ data.insured.fullName }}
+                </template>
+                <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Người Được Bảo Hiểm" />
+                </template>
+            </Column>
+
+            <Column field="dependents.fullName" header="Tên Người Phụ Thuộc" style="min-width: 12rem">
+                <template #body="{ data }">
+                    <div v-for="dep in data.dependents" :key="dep.id">{{ dep.fullName }}</div>
                 </template>
                 <template #filter="{ filterModel }">
                     <InputText v-model="filterModel.value" type="text" placeholder="Search by Tên Người Phụ Thuộc" />
-                </template>
-            </Column>
-            <Column field="insured.DateOfBirth" header="Năm Sinh" style="min-width: 12rem">
-                <template #body="{ data }">
-                    {{ formatDate(data.insured.DateOfBirth) }}
-                </template>
-                <template #filter="{ filterModel }">
-                    <DatePicker v-model="filterModel.value" dateFormat="mm/dd/yy" placeholder="mm/dd/yyyy" />
-                </template>
-            </Column>
-            <Column field="insured.Gender" header="Giới Tính" style="min-width: 12rem">
-                <template #body="{ data }">
-                    {{ formatGender(data.insured.Gender) }}
-                </template>
-                <template #filter="{ filterModel }">
-                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Gender" />
                 </template>
             </Column>
         </DataTable>

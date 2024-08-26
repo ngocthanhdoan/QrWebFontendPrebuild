@@ -10,11 +10,33 @@ export default {
         return {
             buyer: {
                 id: '',
+                type_id: {},
+                nationalID: '',
                 citizenID: '',
                 fullName: '',
-                dateOfBirth: null,
-                gender: ''
-                // Add other fields as necessary
+                dateOfBirth: '',
+                gender: {},
+                address: '',
+                issuingPlace: '',
+                nationality: {},
+                visaNumber: '',
+                insuranceRelationship: '',
+                mobilePhone: '',
+                email: '',
+                age: '',
+                education: {},
+                maritalStatus: {},
+                profession: {},
+                majorCategory: {},
+                mediumCategory: {},
+                minorCategory: {},
+                companyName: '',
+                position: '',
+                jobDescription: '',
+                monthlyIncome: '',
+                postalCode: '',
+                companyPhone: '',
+                branchNumber: ''
             },
             messenger: null,
             toast: null,
@@ -48,7 +70,7 @@ export default {
                 console.error(`Error fetching options for prefix ${prefix}:`, error);
             }
         },
-        async loadBuyer(CMI_ID) {
+        async loadbuyer(CMI_ID) {
             try {
                 if (CMI_ID == null) {
                     this.messenger = 'Không tìm thấy mã thụ lý, vui lòng quay về trang "Danh sách các đơn thụ lý" và chọn đơn xử lý!';
@@ -64,9 +86,19 @@ export default {
                 this.toast.add({ severity: 'error', summary: 'Error', detail: 'An error occurred while fetching buyer data.', life: 3000 });
             }
         },
-        submitForm() {
-            // Handle form submission logic here
-            console.log('Submitting form with data:', this.buyer);
+        async submitForm() {
+            try {
+                console.log(this.buyer);
+                const response = await axios.put(`http://localhost:8082/v4/api/fortest/${this.CMI_ID}/buyer`, this.buyer);
+                if (response.data) {
+                    this.toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 });
+                } else {
+                    this.toast.add({ severity: 'error', summary: 'Lỗi', detail: response.data.message, life: 3000 });
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                this.toast.add({ severity: 'error', summary: 'Lỗi', detail: 'Không thể gửi dữ liệu.', life: 3000 });
+            }
         }
     },
     mounted() {
@@ -76,7 +108,7 @@ export default {
         if (!this.CMI_ID || this.CMI_ID == '') {
             this.messenger = 'Không tìm thấy mã thụ lý, vui lòng quay về trang "Danh sách các đơn thụ lý" và chọn đơn xử lý!';
         } else {
-            this.loadBuyer(this.CMI_ID);
+            this.loadbuyer(this.CMI_ID);
         }
     }
 };
@@ -87,12 +119,23 @@ export default {
         <div class="">
             <Message v-if="messenger !== null" severity="error">{{ messenger }}</Message>
             <div class="card flex flex-col gap-4" v-if="messenger == null">
-                <div class="font-semibold text-xl">Bên Mua Bảo Hiểm</div>
-
+                <div class="font-semibold text-xl">Bên mua bảo hiểm</div>
+                <FloatLabel v-if="CMI_ID">
+                    <InputText id="CMI_ID" v-model="CMI_ID" :readonly="true" />
+                    <label for="CMI_ID">Mã thụ lý</label>
+                </FloatLabel>
                 <!-- Dynamic Selects -->
-                <FloatLabel v-if="dynamicOptions['DOCUMENT_TYPE'] && dynamicOptions['DOCUMENT_TYPE'].length">
+                <FloatLabel v-if="dynamicOptions['DOCUMENT_TYPE'] && dynamicOptions['DOCUMENT_TYPE'].length" readonly>
                     <label for="type_id">Loại giấy tờ</label>
                     <Select v-model="buyer.type_id" :options="dynamicOptions['DOCUMENT_TYPE']" optionLabel="name" />
+                </FloatLabel>
+                <FloatLabel v-if="buyer">
+                    <InputText id="nationalID" v-model="buyer.citizenID" :readonly="true" />
+                    <label for="nationalID">Số chứng minh</label>
+                </FloatLabel>
+                <FloatLabel v-if="buyer">
+                    <InputText id="nationalID" v-model="buyer.nationalID" :readonly="true" />
+                    <label for="nationalID">Số Căn cước</label>
                 </FloatLabel>
                 <FloatLabel v-if="buyer">
                     <InputText id="fullName" v-model="buyer.fullName" />
@@ -147,7 +190,7 @@ export default {
                     <label for="age">Tuổi</label>
                 </FloatLabel>
                 <FloatLabel v-if="dynamicOptions['EDUCATION'] && dynamicOptions['EDUCATION'].length">
-                    <label for="education">Học lực</label>
+                    <label for="education">Học lực {{ buyer.education }}</label>
                     <Select v-model="buyer.education" :options="dynamicOptions['EDUCATION']" optionLabel="name" />
                 </FloatLabel>
 
@@ -169,11 +212,6 @@ export default {
                     <label for="minorCategory">Phân loại nhỏ</label>
                     <Select v-model="buyer.minorCategory" :options="dynamicOptions['MINOR_CATEGORY']" optionLabel="name" />
                 </FloatLabel>
-                <FloatLabel v-if="dynamicOptions['JOBS_TYPE'] && dynamicOptions['JOBS_TYPE'].length">
-                    <label>Nghề nghiệp</label>
-                    <Select v-model="buyer.minorCategory" :options="dynamicOptions['JOBS_TYPE']" optionLabel="name" />
-                </FloatLabel>
-
                 <FloatLabel v-if="buyer">
                     <InputText id="companyName" v-model="buyer.companyName" />
                     <label for="companyName">Tên công ty</label>
@@ -213,153 +251,6 @@ export default {
         </div>
     </Fluid>
 </template>
-
-<!-- 
-<template>
-    <Fluid class="flex flex-col">
-        <div class="">
-            <Message v-if="messenger !== null" severity="error">{{ messenger }}</Message>
-            <div class="card flex flex-col gap-4" v-if="messenger == null">
-                <div class="font-semibold text-xl">Bên Mua Bảo Hiểm</div>
-                 <FloatLabel v-if="buyer">
-                    <InputText id="id" v-model="buyer.id" />
-                    <label for="id">Số CMND</label>
-                </FloatLabel>
-                <FloatLabel v-if="buyer">
-                    <InputText id="citizenID" v-model="buyer.citizenID" />
-                    <label for="citizenID">Số CCCD</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="fullName" v-model="buyer.fullName" />
-                    <label for="fullName">Họ tên</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <DatePicker id="dob" v-model="buyer.dateOfBirth" dateFormat="mm/dd/yy" />
-                    <label for="dob">Ngày tháng năm sinh</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="gender" v-model="buyer.gender" />
-                    <label for="gender">Giới tính</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="address" v-model="buyer.address" />
-                    <label for="address">Địa chỉ</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="issuingPlace" v-model="buyer.issuingPlace" />
-                    <label for="issuingPlace">Nơi cấp</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="nationality" v-model="buyer.nationality" />
-                    <label for="nationality">Quốc tịch</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="visaNumber" v-model="buyer.visaNumber" />
-                    <label for="visaNumber">Số thị thực nhập cảnh</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="insuranceRelationship" v-model="buyer.insuranceRelationship" />
-                    <label for="insuranceRelationship">Quan hệ bảo hiểm</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="mobilePhone" v-model="buyer.mobilePhone" />
-                    <label for="mobilePhone">Số điện thoại di động</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="email" v-model="buyer.email" />
-                    <label for="email">Email</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="age" v-model="buyer.age" />
-                    <label for="age">Tuổi</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="education" v-model="buyer.education" />
-                    <label for="education">Học lực</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="maritalStatus" v-model="buyer.maritalStatus" />
-                    <label for="maritalStatus">Tình trạng hôn nhân</label>
-                </FloatLabel>
-                <FloatLabel>
-                    <label for="profession">Nghề nghiệp</label>
-                    <Select v-model="selectedJob" :options="options.JOBS" optionLabel="name" placeholder="Select JOBS" />
-                    ${{ selectedJob }}
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="profession" v-model="buyer.profession" />
-                    <label for="profession">Nghề nghiệp</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="majorCategory" v-model="buyer.majorCategory" />
-                    <label for="majorCategory">Phân loại lớn</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="mediumCategory" v-model="buyer.mediumCategory" />
-                    <label for="mediumCategory">Phân loại trung</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="minorCategory" v-model="buyer.minorCategory" />
-                    <label for="minorCategory">Phân loại nhỏ</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="companyName" v-model="buyer.companyName" />
-                    <label for="companyName">Tên công ty</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="position" v-model="buyer.position" />
-                    <label for="position">Chức vụ</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="jobDescription" v-model="buyer.jobDescription" />
-                    <label for="jobDescription">Nội dung nghề nghiệp</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="monthlyIncome" v-model="buyer.monthlyIncome" />
-                    <label for="monthlyIncome">Thu nhập tháng</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="postalCode" v-model="buyer.postalCode" />
-                    <label for="postalCode">Mã vùng</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="companyPhone" v-model="buyer.companyPhone" />
-                    <label for="companyPhone">Điện thoại công ty</label>
-                </FloatLabel>
-
-                <FloatLabel v-if="buyer">
-                    <InputText id="branchNumber" v-model="buyer.branchNumber" />
-                    <label for="branchNumber">Số máy nhánh</label>
-                </FloatLabel> 
-
-                <Button label="Submit" icon="pi pi-check" @click="submitForm" />
-            </div>
-        </div>
-    </Fluid>
-</template> -->
 
 <style scoped lang="scss">
 /* Add your custom styles here */
