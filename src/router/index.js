@@ -24,6 +24,11 @@ const router = createRouter({
                     component: () => import('@/views/Employee.vue')
                 },
                 {
+                    path: '/imageToText',
+                    name: 'imageToText',
+                    component: () => import('@/views/ImageToText.vue')
+                },
+                {
                     path: '/insured',
                     name: 'insured',
                     component: () => import('@/views/Insured.vue')
@@ -37,6 +42,53 @@ const router = createRouter({
                     path: '/setting',
                     name: 'setting',
                     component: () => import('@/views/Setting.vue')
+                },
+                {
+                    path: '/dependents',
+                    name: 'dependents',
+                    component: () => import('@/views/Dependents.vue')
+                },
+
+                {
+                    path: '/beneficiary',
+                    name: 'beneficiary',
+                    component: () => import('@/views/Beneficiary.vue')
+                },
+                // { label: 'Thông tin hợp đồng', icon: 'pi pi-fw pi-circle-off', to: '/contractInfo' },
+                // { label: 'Thông tin khác', icon: 'pi pi-fw pi-circle-off', to: '/anotherPageInfo' },
+                // { label: 'Tiểu sử gia đình', icon: 'pi pi-fw pi-circle-off', to: '/familyInfo' },
+                // { label: 'Bằng chứng y tế', icon: 'pi pi-fw pi-circle-off', to: '/hospital' },
+                // { label: 'Giấy tờ kèm theo', icon: 'pi pi-fw pi-circle-off', to: '/attachment' },
+                // { label: 'Cam kết', icon: 'pi pi-fw pi-circle-off', to: '/commit' },
+                // { label: 'Bảng câu hỏi tài chính', icon: 'pi pi-fw pi-circle-off', to: '/listQuestion' },
+                // { label: 'Ký tên', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
+                // { label: 'Đính kèm hình ảnh', icon: 'pi pi-fw pi-circle-off', to: '/attachment-image' },
+                // { label: 'Nghiệp vụ thẩm định', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
+                // { label: 'Kết quả', icon: 'pi pi-fw pi-circle-off', to: '/return' },
+                {
+                    path: '/contractInfo',
+                    name: 'contractInfo',
+                    component: () => import('@/views/ContractInfo.vue')
+                },
+                {
+                    path: '/anotherPageInfo',
+                    name: 'anotherPageInfo',
+                    component: () => import('@/views/AnotherPageInfo.vue')
+                },
+                {
+                    path: '/familyInfo',
+                    name: 'familyInfo',
+                    component: () => import('@/views/FamilyInfo.vue')
+                },
+                {
+                    path: '/attachment',
+                    name: 'attachment',
+                    component: () => import('@/views/AttachmentPage.vue')
+                },
+                {
+                    path: '/commit',
+                    name: 'commit',
+                    component: () => import('@/views/Commit.vue')
                 },
                 {
                     path: '/uikit/formlayout',

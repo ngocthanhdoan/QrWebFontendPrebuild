@@ -21,7 +21,6 @@ export default {
                 issuingPlace: '',
                 nationality: {},
                 visaNumber: '',
-                insuranceRelationship: '',
                 mobilePhone: '',
                 email: '',
                 age: '',
@@ -37,7 +36,8 @@ export default {
                 monthlyIncome: '',
                 postalCode: '',
                 companyPhone: '',
-                branchNumber: ''
+                branchNumber: '',
+                relationShip: {}
             },
             buyer: {
                 id: '',
@@ -51,7 +51,7 @@ export default {
                 issuingPlace: '',
                 nationality: {},
                 visaNumber: '',
-                insuranceRelationship: '',
+                relationShip: {},
                 mobilePhone: '',
                 email: '',
                 age: '',
@@ -165,7 +165,7 @@ export default {
 
             // Validate dependents' data
             this.dependents.forEach((dependent, index) => {
-                // if (!dependent.idNumber) errors.push(`Số chứng minh nhân dân của người phụ thuộc ${index + 1} là bắt buộc.`);
+                if (!dependent.nationalID) errors.push(`Số chứng minh nhân dân của người phụ thuộc ${index + 1} là bắt buộc.`);
                 if (!dependent.fullName) errors.push(`Họ tên của người phụ thuộc ${index + 1} là bắt buộc.`);
             });
 
@@ -222,7 +222,7 @@ export default {
                 issuingPlace: '',
                 nationality: {},
                 visaNumber: '',
-                insuranceRelationship: '',
+                relationShip: {},
                 mobilePhone: '',
                 email: '',
                 age: '',
@@ -467,10 +467,16 @@ export default {
                         <label for="insuredGender" class="mb-2">Giới Tính</label>
                         <Select id="insuredGender" v-model="insured.gender" :options="dynamicOptions['GENDER']" optionLabel="name" placeholder="Chọn giới tính" />
                     </div>
-                    <div v-if="showQRInsured" class="flex items-center mt-6 md:mt-0">
-                        <input type="file" ref="fileInputRefInsured" @change="handleFileUploadInsured" style="display: none" />
-                        <Button id="btn2" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefInsured.click()" />
-                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <label for="insuredGender" class="mb-2">Người Phụ Thuộc</label>
+                    <Button label="Thêm Người Phụ Thuộc" class="p-button-info" @click="addDependent" />
+                </div>
+                <div v-if="showQRInsured" class="flex flex-col">
+                    <label for="insuredGender" class="mb-2">Nhập nhanh thông tin</label>
+                    <input type="file" ref="fileInputRefInsured" @change="handleFileUploadInsured" style="display: none" />
+                    <Button id="btn2" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefInsured.click()" />
                 </div>
             </div>
         </div>
@@ -480,9 +486,17 @@ export default {
             <h2 class="text-xl font-semibold mb-4">Người Phụ Thuộc</h2>
             <div v-for="(dependent, index) in dependents" :key="index" class="bg-gray-100 p-4 rounded-lg mb-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div v-if="dynamicOptions['RELATIONSHIP'] && dynamicOptions['RELATIONSHIP'].length" class="flex flex-col">
+                        <label for="insuredJob" class="mb-2">Loại đối tượng</label>
+                        <Select id="insuredJob" v-model="insured.relationShip" :options="dynamicOptions['RELATIONSHIP']" optionLabel="name" />
+                    </div>
                     <div class="flex flex-col">
                         <label :for="'dependentIdNumber_' + index" class="mb-2">Số chứng minh nhân dân</label>
                         <InputText :id="'dependentIdNumber_' + index" v-model="dependent.nationalID" type="text" />
+                    </div>
+                    <div class="flex flex-col">
+                        <label :for="'dependentCitizenID_' + index" class="mb-2">Số căn cước công dân</label>
+                        <InputText :id="'dependentCitizenID_' + index" v-model="dependent.citizenID" type="text" />
                     </div>
                     <div class="flex flex-col">
                         <label :for="'dependentFullName_' + index" class="mb-2">Họ tên</label>
@@ -508,13 +522,11 @@ export default {
                         <label :for="'dependentJob_' + index" class="mb-2">Nghề Nghiệp</label>
                         <Select :id="'dependentJob_' + index" v-model="dependent.majorCategory" :options="dynamicOptions['MAJOR_CATEGORY']" optionLabel="name" placeholder="Chọn nghề nghiệp" />
                     </div>
-                    <div class="flex items-center justify-end mt-4">
+                    <div class="flex flex-col">
+                        <label for="insuredGender" class="mb-2">Hành động</label>
                         <Button label="Xóa" class="p-button-danger" @click="removeDependent(index)" />
                     </div>
                 </div>
-            </div>
-            <div class="flex justify-start mt-4">
-                <Button label="Thêm Người Phụ Thuộc" @click="addDependent" />
             </div>
         </div>
         <div class="card p-6 mt-8 w-full">

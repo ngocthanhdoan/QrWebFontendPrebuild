@@ -6,7 +6,10 @@ import AppMenuItem from './AppMenuItem.vue';
 const model = ref([
     {
         label: 'Khu vực IT',
-        items: [{ label: '	Cấu hình dữ liệu [Dev]', icon: 'pi pi-fw pi-cog', to: '/setting' }]
+        items: [
+            { label: '[Dev]_Cấu hình dữ liệu ', icon: 'pi pi-fw pi-cog', to: '/setting' },
+            { label: '[Dev]_Đọc văn bản từ hình ảnh', icon: 'pi pi-fw pi-cog', to: '/imageToText' }
+        ]
     },
     {
         label: 'Home',
@@ -22,19 +25,19 @@ const model = ref([
             { label: 'Nhân viên tư vấn', icon: 'pi pi-fw pi-circle-off', to: '/employee' },
             { label: 'Bên mua bảo hiểm', icon: 'pi pi-fw pi-circle-off', to: '/buyer' },
             { label: 'Người được bảo hiểm', icon: 'pi pi-fw pi-circle-off', to: '/insured' },
-            { label: 'Người phụ thuộc', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Người thụ hưởng', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Thông tin hợp đồng', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Thông tin khác', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Tiểu sử gia đình', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Bằng chứng y tế', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Giấy tờ kèm theo', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Cam kết', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Bảng câu hỏi tài chính', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
+            { label: 'Người phụ thuộc', icon: 'pi pi-fw pi-circle-off', to: '/dependents' },
+            { label: 'Người thụ hưởng', icon: 'pi pi-fw pi-circle-off', to: '/beneficiary' },
+            { label: 'Thông tin hợp đồng', icon: 'pi pi-fw pi-circle-off', to: '/contractInfo' },
+            { label: 'Thông tin khác', icon: 'pi pi-fw pi-circle-off', to: '/anotherPageInfo' },
+            { label: 'Tiểu sử gia đình', icon: 'pi pi-fw pi-circle-off', to: '/familyInfo' },
+            { label: 'Bằng chứng y tế', icon: 'pi pi-fw pi-circle-off', to: '/hospital' },
+            { label: 'Giấy tờ kèm theo', icon: 'pi pi-fw pi-circle-off', to: '/attachment' },
+            { label: 'Cam kết', icon: 'pi pi-fw pi-circle-off', to: '/commit' },
+            { label: 'Bảng câu hỏi tài chính', icon: 'pi pi-fw pi-circle-off', to: '/listQuestion' },
             { label: 'Ký tên', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Đính kèm hình ảnh', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
+            { label: 'Đính kèm hình ảnh', icon: 'pi pi-fw pi-circle-off', to: '/attachment-image' },
             { label: 'Nghiệp vụ thẩm định', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
-            { label: 'Kết quả', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
+            { label: 'Kết quả', icon: 'pi pi-fw pi-circle-off', to: '/return' },
             { label: 'Form Layout', icon: 'pi pi-fw pi-circle-off', to: '/uikit/formlayout' },
             { label: 'Input', icon: 'pi pi-fw pi-check-square', to: '/uikit/input' },
             { label: 'Button', icon: 'pi pi-fw pi-mobile', to: '/uikit/button', class: 'rotated-icon' },
