@@ -14,7 +14,7 @@ export default {
     methods: {
         async fetchData() {
             try {
-                const response = await axios.get('http://localhost:8082/v4/api/data');
+                const response = await axios.get('/v4/api/data');
                 const prefixes = this.extractPrefixes(response.data);
                 await Promise.all(prefixes.map((prefix) => this.fetchAuto(prefix)));
             } catch (error) {
@@ -26,7 +26,7 @@ export default {
         },
         async fetchAuto(prefix) {
             try {
-                const response = await axios.get(`http://localhost:8082/v4/api/data/prefix/${prefix}`);
+                const response = await axios.get(`/v4/api/data/prefix/${prefix}`);
                 this.dynamicOptions[prefix] = response.data.map((item) => ({
                     code: item.key,
                     name: item.value

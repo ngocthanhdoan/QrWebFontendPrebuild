@@ -3,8 +3,6 @@ import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vite';
-
-// https://vitejs.dev/config/
 export default defineConfig({
     optimizeDeps: {
         noDiscovery: true
@@ -20,12 +18,21 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
+    server: {
+        proxy: {
+            '/': {
+                target: 'http://localhost:8082',
+                changeOrigin: true
+                // rewrite: (path) => path.replace(/^\/api/, '')
+            }
+        }
+    },
     build: {
-        outDir: 'D:/dev/devhub/QRWeb/src/main/resources/static', // Đặt thư mục output build
-        assetsDir: '', // Đặt assetsDir nếu bạn muốn tổ chức các tài nguyên
+        outDir: 'D:/dev/devhub/QRWeb/src/main/resources/static',
+        assetsDir: '', // Đặt thư mục tài nguyên, nếu cần
         rollupOptions: {
             output: {
-                // Tùy chỉnh các tùy chọn rollup nếu cần thiết
+                // Tùy chỉnh tùy chọn rollup ở đây
             }
         }
     }

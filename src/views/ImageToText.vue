@@ -24,7 +24,7 @@ export default {
             formData.append('file', this.file);
 
             try {
-                const response = await axios.post('http://localhost:8082/api/process-image', formData, {
+                const response = await axios.post('/api/process-image', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }

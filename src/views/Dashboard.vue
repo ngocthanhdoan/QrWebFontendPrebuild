@@ -6,7 +6,6 @@ import { ref } from 'vue';
 
 export default {
     mixins: [fetchOptionsMixin],
-
     data() {
         return {
             insured: {
@@ -78,7 +77,9 @@ export default {
             showQRInsured: false,
             fileInputRefBuyer: ref(null), // Reference to file input element for Buyer
             fileInputRefInsured: ref(null),
-            loading: false
+            loading: false,
+            showImageBuyer: false,
+            showImageInsure: false
         };
     },
     computed: {
@@ -93,7 +94,7 @@ export default {
         async fetchData() {
             this.loading = true; // Set loading to true before starting API call
             try {
-                const response = await axios.get('http://localhost:8082/v4/api/data');
+                const response = await axios.get('/v4/api/data');
                 const prefixes = this.extractPrefixes(response.data);
                 await Promise.all(prefixes.map((prefix) => this.fetchAuto(prefix)));
             } catch (error) {
@@ -108,7 +109,7 @@ export default {
         async fetchAuto(prefix) {
             this.loading = true; // Set loading to true before starting API call
             try {
-                const response = await axios.get(`http://localhost:8082/v4/api/data/prefix/${prefix}`);
+                const response = await axios.get(`/v4/api/data/prefix/${prefix}`);
                 this.dynamicOptions[prefix] = response.data.map((item) => ({
                     code: item.key,
                     name: item.value
@@ -192,7 +193,7 @@ export default {
             // Perform the API call to submit the form
             this.loading = true;
             try {
-                const response = await axios.post('http://localhost:8082/v1/api/DataForTesting', data);
+                const response = await axios.post('/v1/api/DataForTesting', data);
                 if (response.data.status === 'success') {
                     this.toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 });
                 } else {
@@ -272,7 +273,7 @@ export default {
             this.loading = true; // Set loading to true before starting API call
 
             try {
-                const response = await axios.post('http://localhost:8082/api/process-upload', formData, {
+                const response = await axios.post('/api/process-upload', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
@@ -286,10 +287,12 @@ export default {
                     this.toast.add({ severity: 'warn', summary: 'Warning', detail: response.data.message, life: 3000 });
                 } else {
                     this.toast.add({ severity: 'error', summary: 'Error', detail: response.data.message, life: 3000 });
+                    this.showImageBuyer = false;
                 }
             } catch (error) {
                 console.error('Error uploading file:', error);
                 this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to upload file.', life: 3000 });
+                this.showImageBuyer = false;
             } finally {
                 this.loading = false; // Set loading to false when API call is complete
             }
@@ -301,6 +304,8 @@ export default {
 
             if (!fileInput || fileInput.files.length === 0) {
                 this.toast.add({ severity: 'warn', summary: 'Warning', detail: 'Please select a file to upload.', life: 3000 });
+                this.showImageBuyer = false;
+                this.showImageInsure = false;
                 return;
             }
 
@@ -310,7 +315,7 @@ export default {
             this.loading = true; // Set loading to true before starting API call
 
             try {
-                const response = await axios.post('http://localhost:8082/api/process-upload', formData, {
+                const response = await axios.post('/api/process-upload', formData, {
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
@@ -322,9 +327,13 @@ export default {
                 } else if (response.data.status === 'warning') {
                     this.updateFormWithResponse(response.data.new_data, 'insured');
                     this.toast.add({ severity: 'warn', summary: 'Warning', detail: response.data.message, life: 3000 });
+                } else {
+                    this.toast.add({ severity: 'error', summary: 'Error', detail: response.data.message, life: 3000 });
+                    this.showImageInsure = false;
                 }
             } catch (error) {
                 console.error('Error uploading file:', error);
+                this.showImageInsure = false;
                 this.toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to upload file.', life: 3000 });
             } finally {
                 this.loading = false; // Set loading to false when API call is complete
@@ -348,6 +357,7 @@ export default {
                 this.buyer.dateOfBirth = formattedDateOfBirth || '';
                 this.buyer.gender = gender || '';
                 this.buyer.address = data.address || '';
+                this.showImageBuyer = true;
             } else if (type === 'insured') {
                 this.insured.nationalID = data.id_identity_card || '';
                 this.insured.citizenID = data.id_passport || '';
@@ -355,6 +365,7 @@ export default {
                 this.insured.dateOfBirth = formattedDateOfBirth || '';
                 this.insured.gender = gender || '';
                 this.insured.address = data.address || '';
+                this.showImageInsure = true;
             }
         }
     },
@@ -420,8 +431,13 @@ export default {
                     <Select id="buyerGender" v-model="buyer.gender" :options="dynamicOptions['GENDER']" optionLabel="name" placeholder="Chọn giới tính" />
                 </div>
                 <div v-if="showQRBuyer" class="flex items-center mt-6">
-                    <input type="file" ref="fileInputRefBuyer" @change="handleFileUploadBuyer" style="display: none" />
-                    <Button id="btn1" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefBuyer.click()" />
+                    <div>
+                        <input type="file" ref="fileInputRefBuyer" @change="handleFileUploadBuyer" style="display: none" />
+                        <Button id="btn1" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefBuyer.click()" />
+                    </div>
+                    <div v-if="showImageBuyer">
+                        <Image :src="`/api/card-image/${buyer.citizenID}`" :alt="`${insured.buyer}`" width="250" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -477,6 +493,9 @@ export default {
                     <label for="insuredGender" class="mb-2">Nhập nhanh thông tin</label>
                     <input type="file" ref="fileInputRefInsured" @change="handleFileUploadInsured" style="display: none" />
                     <Button id="btn2" label="Nhận diện nhanh thông tin qua mã QR CCCD" @click="$refs.fileInputRefInsured.click()" />
+                </div>
+                <div v-if="showImageInsure">
+                    <Image :src="`/api/card-image/${insured.citizenID}`" :alt="`${insured.citizenID}`" width="250" />
                 </div>
             </div>
         </div>

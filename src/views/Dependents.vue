@@ -19,7 +19,7 @@ export default {
     methods: {
         async fetchData() {
             try {
-                const response = await axios.get('http://localhost:8082/v4/api/data');
+                const response = await axios.get('/v4/api/data');
                 const prefixes = this.extractPrefixes(response.data);
                 await Promise.all(prefixes.map((prefix) => this.fetchAuto(prefix)));
             } catch (error) {
@@ -31,7 +31,7 @@ export default {
         },
         async fetchAuto(prefix) {
             try {
-                const response = await axios.get(`http://localhost:8082/v4/api/data/prefix/${prefix}`);
+                const response = await axios.get(`/v4/api/data/prefix/${prefix}`);
                 this.dynamicOptions[prefix] = response.data.map((item) => ({
                     code: item.key,
                     name: item.value
@@ -46,10 +46,11 @@ export default {
                 if (CMI_ID == null) {
                     this.messenger = 'Không tìm thấy mã thụ lý, vui lòng quay về trang "Danh sách các đơn thụ lý" và chọn đơn xử lý!';
                 } else {
-                    const response = await axios.get(`http://localhost:8082/v4/api/fortest/${CMI_ID}/dependents`);
+                    const response = await axios.get(`/v4/api/fortest/${CMI_ID}/dependents`);
                     if (response != null) {
-                        this.toast.add({ severity: 'success', summary: 'Success', detail: 'Tra tìm thành công!', life: 3000 });
                         this.dependents = response.data;
+                    } else {
+                        this.messenger = 'Chưa có dữ liệu người phụ thuộc';
                     }
                 }
             } catch (error) {
@@ -60,7 +61,7 @@ export default {
         async submitForm() {
             try {
                 console.log(this.dependents);
-                const response = await axios.put(`http://localhost:8082/v4/api/fortest/${this.CMI_ID}/dependents`, this.dependents);
+                const response = await axios.put(`/v4/api/fortest/${this.CMI_ID}/dependents`, this.dependents);
                 if (response.data) {
                     this.toast.add({ severity: 'success', summary: 'Thành công', detail: response.data.message, life: 3000 });
                 } else {
@@ -213,7 +214,7 @@ export default {
                 </FloatLabel>
                 <!-- Repeat for other fields -->
             </div>
-            <Button label="Submit" icon="pi pi-check" @click="submitForm" />
+            <Button v-if="dependents.length > 0" label="Submit" icon="pi pi-check" @click="submitForm" />
         </div>
     </Fluid>
 </template>
